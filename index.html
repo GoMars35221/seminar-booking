@@ -83,6 +83,11 @@ h1{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:clamp(34px,6vw
 .done-lede{max-width:480px;margin:0 auto 22px;color:var(--ink-soft);font-size:15px}
 .remind{max-width:520px;margin:0 auto 22px;text-align:left;background:#fbeecd;border:1px solid #e0b874;border-left:4px solid var(--accent);border-radius:10px;padding:14px 16px;font-size:14px;color:#5c3a18;line-height:1.55}
 .remind strong{color:var(--accent)}
+.opt-email{max-width:520px;margin:0 auto 22px;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+.opt-email-head{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:18px;color:var(--ink)}
+.opt-email-p{font-size:13px;color:var(--ink-soft);margin:8px 0 16px;line-height:1.55}
+.opt-email .form-actions{margin-top:0}
+.mail-hint{font-size:13px;color:#5c3a18;background:#fbeecd;border:1px solid #e0b874;border-radius:8px;padding:10px 12px;margin-top:14px;text-align:left}
 .summary{text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:var(--ink);overflow:auto}
 .center-link{display:block;margin:22px auto 0;background:none;border:none;color:var(--accent);text-decoration:underline;cursor:pointer;font-family:inherit;font-size:13px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#F5F1E7;padding:12px 20px;border-radius:10px;font-size:14px;max-width:90vw;text-align:center;z-index:60;box-shadow:0 10px 30px rgba(0,0,0,.3)}
@@ -360,18 +365,27 @@ function renderDone(){
   root.innerHTML=`
   <div class="form-page done">
     <div class="tick">✓</div>
-    <h1 class="form-title">Your date is held</h1>
-    <p class="done-lede">${esc(dateLabel(c.slot))} is reserved for you.</p>
-    <div class="remind"><strong>One last step</strong> — please click <em>“Send confirmation email”</em> below now. This sends your details to ${esc(ORGANISER.name)} and to yourself, so you both have the reservation in writing.</div>
-    <pre class="summary">${esc(summary)}</pre>
-    <div class="form-actions center">
-      <a class="primary" href="${mailto}">Send confirmation email</a>
-      <button class="ghost" id="copy">Copy details</button>
+    <h1 class="form-title">Your date is confirmed</h1>
+    <p class="done-lede">${esc(dateLabel(c.slot))} is now reserved for you and saved. ${esc(ORGANISER.name)} has received your details — you don’t need to do anything else.</p>
+
+    <div class="opt-email">
+      <div class="opt-email-head">Optional: email yourself a copy</div>
+      <p class="opt-email-p">If you’d like a copy in your inbox, use the button below. It opens your own email app with everything filled in (this can take a few seconds), and you just press <em>Send</em> there. It also copies ${esc(ORGANISER.name)}.</p>
+      <div class="form-actions center">
+        <a class="primary" id="mailbtn" href="${mailto}">Email me a copy</a>
+        <button class="ghost" id="copy">Copy details instead</button>
+      </div>
+      <p class="mail-hint" id="mailhint" style="display:none">Your email app should be opening now — please switch to it and press <strong>Send</strong>. If nothing opened after a few seconds, click the button once more, or use “Copy details instead”.</p>
     </div>
+
+    <pre class="summary">${esc(summary)}</pre>
     <button class="center-link" id="home">Back to the programme</button>
   </div>`;
+  document.getElementById("mailbtn").onclick=()=>{
+    const h=document.getElementById("mailhint"); if(h) h.style.display="block";
+  };
   document.getElementById("copy").onclick=async()=>{
-    try{ await navigator.clipboard.writeText(summary); toast("Copied."); }
+    try{ await navigator.clipboard.writeText(summary); toast("Copied to clipboard."); }
     catch{ toast("Select the text above to copy it."); }
   };
   document.getElementById("home").onclick=()=>{ state.confirmed=null; state.slot=null; state.view="programme"; render(); };
