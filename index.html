@@ -85,7 +85,8 @@ h1{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:clamp(34px,6vw
 .remind strong{color:var(--accent)}
 .opt-email{max-width:520px;margin:0 auto 22px;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
 .opt-email-head{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:18px;color:var(--ink)}
-.opt-email-p{font-size:13px;color:var(--ink-soft);margin:8px 0 16px;line-height:1.55}
+.opt-email-p{font-size:13px;color:var(--ink-soft);margin:8px 0 10px;line-height:1.55}
+.opt-email-reassure{font-size:13px;color:var(--accent);margin:0 0 16px;line-height:1.55}
 .opt-email .form-actions{margin-top:0}
 .mail-hint{font-size:13px;color:#5c3a18;background:#fbeecd;border:1px solid #e0b874;border-radius:8px;padding:10px 12px;margin-top:14px;text-align:left}
 .summary{text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:var(--ink);overflow:auto}
@@ -370,7 +371,8 @@ function renderDone(){
 
     <div class="opt-email">
       <div class="opt-email-head">Optional: email yourself a copy</div>
-      <p class="opt-email-p">If you’d like a copy in your inbox, use the button below. It opens your own email app with everything filled in (this can take a few seconds), and you just press <em>Send</em> there. It also copies ${esc(ORGANISER.name)}.</p>
+      <p class="opt-email-p">Click below and your own email app will open with everything filled in — just press <em>Send</em> there. It also copies ${esc(ORGANISER.name)}. <strong>It can take a few seconds to open, so please wait a moment rather than clicking again.</strong></p>
+      <p class="opt-email-reassure">No need to worry if it doesn’t open or you can’t send it — ${esc(ORGANISER.name)} has already received your confirmation details, so your booking is complete either way.</p>
       <div class="form-actions center">
         <a class="primary" id="mailbtn" href="${mailto}">Email me a copy</a>
         <button class="ghost" id="copy">Copy details instead</button>
