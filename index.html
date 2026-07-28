@@ -103,8 +103,8 @@ h1{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:clamp(34px,6vw
    CONFIG — fill these two lines in (see the setup guide).
    Get them from Supabase: Project Settings > API.
    ======================================================================= */
-const SUPABASE_URL = "https://rizfxvhaukkmhbhkdbaf.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_p2qpwxbS_2gbWhEAIrSW9Q_MFK3BEio";
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL_HERE";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
 
 const ORGANISER = {
   school: "Loughborough Business School",
@@ -149,7 +149,7 @@ function fmt(dateStr){
     yr:d.getFullYear()
   };
 }
-function dateLabel(s){ const f=fmt(s); return `${f.wdLong} ${f.day} ${f.mon} ${f.yr}, 14:00–15:00 UK`; }
+function dateLabel(s){ const f=fmt(s); return `${f.wdLong} ${f.day} ${f.mon} ${f.yr}, 14:00–15:30 UK`; }
 function esc(x){ return (x||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
 async function loadTaken(){
@@ -210,7 +210,7 @@ function renderProgramme(){
   <header class="masthead">
     <div class="eyebrow">${esc(ORGANISER.school)} · ${esc(ORGANISER.department)}</div>
     <h1>Research Seminar Series</h1>
-    <div class="subtitle">Speaker programme, 2026–27 · Wednesdays 14:00–15:00 UK</div>
+    <div class="subtitle">Speaker programme, 2026–27 · Wednesdays 14:00–15:30 UK</div>
     <p class="lede">Thank you for agreeing to speak. Choose one open Wednesday, then tell us about your talk and travel. Reserved dates leave the list, so you only ever see what’s still free.</p>
     <div class="host">Hosted by ${esc(ORGANISER.name)} · ${esc(ORGANISER.role)}</div>
   </header>`;
@@ -229,7 +229,7 @@ function renderProgramme(){
         const taken=state.booked.has(slot); const f=fmt(slot);
         html += `<div class="card${taken?" taken":""}">
           <div class="date"><span class="wd">${f.wd}</span><span class="dm">${f.day} ${f.mon}</span><span class="yr">${f.yr}</span></div>
-          <div class="time">14:00–15:00</div>
+          <div class="time">14:00–15:30</div>
           ${taken?`<div class="seal">Reserved</div>`:`<button class="reserve" data-slot="${slot}">Reserve this date</button>`}
         </div>`;
       }
