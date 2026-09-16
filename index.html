@@ -223,7 +223,7 @@ const sb = (SUPABASE_URL.startsWith("http") && window.supabase)
 const state = { booked:new Set(), loading:true, view:"programme", slot:null,
   form:blankForm(), confirmed:null };
 
-function blankForm(){ return {name:"",email:"",speakerType:"",title:"",abstract:"",transport:"",accommodation:"",accommodationOther:"",party:"Just me",guests:2,dinner:""}; }
+function blankForm(){ return {name:"",email:"",speakerType:"",attendance:"",title:"",abstract:"",transport:"",accommodation:"",accommodationOther:"",party:"Just me",guests:2,dinner:""}; }
 
 function fmt(dateStr){
   const d = new Date(dateStr+"T14:00:00");
@@ -256,19 +256,22 @@ function buildSummary(slot,b){
     "Speaker: "+b.name,
     "Email: "+b.email,
     "Speaker type: "+(b.speaker_type||"—"),
+    "Attendance: "+(b.attendance||"—"),
     "Talk title: "+(b.title||"—"),
     "",
     "Abstract:",
     b.abstract||"—"
   ];
-  if(b.speaker_type==="External speaker"){
+  if(b.speaker_type==="External speaker" && b.attendance==="In person"){
     lines.push("",
       "Travel (UK): "+(b.transport||"—"),
       "Accommodation: "+(b.accommodation||"—"),
       "Attending: "+(b.party||"—")+(b.guests>1?(" — "+b.guests+" people in total"):""),
       "Wednesday dinner: "+(b.dinner||"—"));
+  } else if(b.attendance==="Online"){
+    lines.push("","(Joining online — no travel, accommodation or dinner needed.)");
   } else {
-    lines.push("","(Internal speaker — no travel, accommodation or dinner arrangements needed.)");
+    lines.push("","(Internal speaker — no travel, accommodation or dinner needed.)");
   }
   return lines.join("\r\n");
 }
@@ -346,14 +349,18 @@ async function openForm(slot){
 
 function renderForm(){
   const f=state.form;
-  const ext = f.speakerType==="External speaker"; // external-only fields enabled?
+  const ext = f.speakerType==="External speaker";
+  const inperson = f.attendance==="In person";
+  const logi = ext && inperson; // travel/accommodation/dinner only for external, in-person speakers
   const optRow=(field,vals,col,disabled)=>`<div class="opts${col?" col":""}">`+vals.map(v=>`<button type="button" class="opt${f[field]===v?" on":""}${disabled?" disabled":""}" data-field="${field}" data-val="${esc(v)}"${disabled?" disabled":""}>${esc(v)}</button>`).join("")+`</div>`;
 
-  const extNote = f.speakerType===""
-    ? `<div class="section-note">These apply to external speakers. Choose your speaker type above to enable them.</div>`
-    : (ext
-        ? `<div class="section-note">Please complete these — they help us arrange your visit.</div>`
-        : `<div class="section-note">You selected <strong>Internal speaker</strong>, so these don’t apply and are disabled.</div>`);
+  const extNote = logi
+    ? `<div class="section-note">Please complete these — they help us arrange your visit.</div>`
+    : (f.attendance==="Online"
+        ? `<div class="section-note">You’re joining <strong>online</strong>, so these don’t apply and are disabled.</div>`
+        : (f.speakerType==="Internal speaker"
+            ? `<div class="section-note">You selected <strong>Internal speaker</strong>, so these don’t apply and are disabled.</div>`
+            : `<div class="section-note">These apply to external speakers attending in person. Complete the two questions above to enable them.</div>`));
 
   root.innerHTML=`
   <div class="form-page">
@@ -366,21 +373,23 @@ function renderForm(){
 
     <div class="field"><label>Are you an internal or external speaker? <span class="req">*</span></label>${optRow("speakerType",["Internal speaker","External speaker"])}<div class="hint">Internal = based at Loughborough. External = visiting from elsewhere.</div></div>
 
+    <div class="field"><label>Will you present in person or online? <span class="req">*</span></label>${optRow("attendance",["In person","Online"])}<div class="hint">Online speakers only need to give a title and abstract — no travel, accommodation or dinner.</div></div>
+
     <div class="field"><label>Talk title <span class="req">*</span></label><input id="f-title" value="${esc(f.title)}" placeholder="Working title is fine, or ‘TBD’"></div>
     <div class="field"><label>Abstract <span class="req">*</span></label><textarea id="f-abstract" rows="6" maxlength="500" placeholder="Paste your abstract (up to 500 characters), or type ‘TBD’.">${esc(f.abstract)}</textarea>
       <div class="hint">Up to 500 characters. Not decided yet? Enter <strong>TBD</strong> — you can send the final title and abstract up to <strong>two weeks before</strong> your seminar date.</div></div>
 
-    <div class="section-head">Travel &amp; visit (external speakers)</div>
+    <div class="section-head">Travel &amp; visit (external, in-person speakers)</div>
     ${extNote}
 
-    <div class="field"><label>How will you travel?${ext?` <span class="req">*</span>`:``} <span class="hint">— UK travel only</span></label>${optRow("transport",TRANSPORT,false,!ext)}</div>
-    <div class="field"><label>Accommodation${ext?` <span class="req">*</span>`:``}</label>${optRow("accommodation",ACCOMMODATION,true,!ext)}
-      <div class="guests" id="accom-other-wrap" style="${ext&&f.accommodation===ACCOM_OTHER?"":"display:none"}"><label>Please describe your arrangement (up to 500 characters)</label><textarea id="f-accom-other" rows="4" maxlength="500" placeholder="Tell us which night(s) you’d like to stay, or your specific plans.">${esc(f.accommodationOther)}</textarea></div>
+    <div class="field"><label>How will you travel?${logi?` <span class="req">*</span>`:``} <span class="hint">— UK travel only</span></label>${optRow("transport",TRANSPORT,false,!logi)}</div>
+    <div class="field"><label>Accommodation${logi?` <span class="req">*</span>`:``}</label>${optRow("accommodation",ACCOMMODATION,true,!logi)}
+      <div class="guests" id="accom-other-wrap" style="${logi&&f.accommodation===ACCOM_OTHER?"":"display:none"}"><label>Please describe your arrangement (up to 500 characters)</label><textarea id="f-accom-other" rows="4" maxlength="500" placeholder="Tell us which night(s) you’d like to stay, or your specific plans.">${esc(f.accommodationOther)}</textarea></div>
       <div class="hint">Two nights is for speakers arriving on the Tuesday. Need something different (e.g. a Tuesday night only)? Choose “Other” and tell us.</div></div>
-    <div class="field"><label>Who’s coming?${ext?` <span class="req">*</span>`:``}</label>${optRow("party",["Just me","Me and guest(s)"],false,!ext)}
-      <div class="guests" id="guests-wrap" style="${ext&&f.party==="Me and guest(s)"?"":"display:none"}"><label>Total number of people (including you)</label><input id="f-guests" type="number" min="2" value="${f.guests}"></div>
+    <div class="field"><label>Who’s coming?${logi?` <span class="req">*</span>`:``}</label>${optRow("party",["Just me","Me and guest(s)"],false,!logi)}
+      <div class="guests" id="guests-wrap" style="${logi&&f.party==="Me and guest(s)"?"":"display:none"}"><label>Total number of people (including you)</label><input id="f-guests" type="number" min="2" value="${f.guests}"></div>
     </div>
-    <div class="field"><label>Wednesday evening dinner${ext?` <span class="req">*</span>`:``}</label>${optRow("dinner",DINNER,false,!ext)}<div class="hint">There is a group dinner on the Wednesday evening after the seminar. If you can’t join it, or you’re staying on other nights, we’ll also arrange dinner for you on those evenings.</div></div>
+    <div class="field"><label>Wednesday evening dinner${logi?` <span class="req">*</span>`:``}</label>${optRow("dinner",DINNER,false,!logi)}<div class="hint">There is a group dinner on the Wednesday evening after the seminar. If you can’t join it, or you’re staying on other nights, we’ll also arrange dinner for you on those evenings.</div></div>
 
     <div class="form-actions">
       <button class="ghost" id="cancel">Cancel</button>
@@ -395,7 +404,7 @@ function renderForm(){
     syncInputs();
     const field=b.getAttribute("data-field"), value=b.getAttribute("data-val");
     f[field]=value;
-    if(field==="speakerType" && value==="Internal speaker"){ f.transport=""; f.accommodation=""; f.accommodationOther=""; f.dinner=""; f.party="Just me"; }
+    if(!(f.speakerType==="External speaker" && f.attendance==="In person")){ f.transport=""; f.accommodation=""; f.accommodationOther=""; f.dinner=""; f.party="Just me"; }
     render();
   });
   document.getElementById("back").onclick=()=>{ state.view="programme"; state.slot=null; render(); };
@@ -407,9 +416,10 @@ function missing(f){
   if(!f.name.trim()) return "your name";
   if(!/.+@.+\..+/.test(f.email.trim())) return "a valid email address";
   if(!f.speakerType) return "whether you’re an internal or external speaker";
+  if(!f.attendance) return "whether you’ll present in person or online";
   if(!f.title.trim()) return "the talk title (or ‘TBD’)";
   if(!f.abstract.trim()) return "the abstract (or ‘TBD’)";
-  if(f.speakerType==="External speaker"){
+  if(f.speakerType==="External speaker" && f.attendance==="In person"){
     if(!f.transport) return "how you’ll travel";
     if(!f.accommodation) return "your accommodation preference";
     if(f.accommodation===ACCOM_OTHER && !f.accommodationOther.trim()) return "a note about your accommodation arrangement";
@@ -425,12 +435,13 @@ async function confirmReserve(){
   if(!sb){ toast("The site isn’t connected to its database yet."); return; }
   const btn=document.getElementById("confirm"); btn.disabled=true; btn.textContent="Reserving…";
   const isExt = f.speakerType==="External speaker";
+  const logi = isExt && f.attendance==="In person";
   const row={ slot:state.slot, name:f.name.trim(), email:f.email.trim(),
-    speaker_type:f.speakerType, title:f.title.trim(), abstract:f.abstract.trim(),
-    transport:isExt?f.transport:null,
-    accommodation:isExt?(f.accommodation===ACCOM_OTHER?("Other: "+f.accommodationOther.trim()):f.accommodation):null,
-    party:isExt?f.party:null, guests:isExt&&f.party==="Me and guest(s)"?Number(f.guests):null,
-    dinner:isExt?f.dinner:null };
+    speaker_type:f.speakerType, attendance:f.attendance, title:f.title.trim(), abstract:f.abstract.trim(),
+    transport:logi?f.transport:null,
+    accommodation:logi?(f.accommodation===ACCOM_OTHER?("Other: "+f.accommodationOther.trim()):f.accommodation):null,
+    party:logi?f.party:null, guests:logi&&f.party==="Me and guest(s)"?Number(f.guests):null,
+    dinner:logi?f.dinner:null };
   const { error } = await sb.from("bookings").insert(row);
   if(error){
     if(error.code==="23505"){ // date already taken (primary key clash)
